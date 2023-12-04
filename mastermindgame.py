@@ -1,5 +1,11 @@
 import random
 import uuid
+import random
+
+
+class Automata:
+    def generate_code(self):
+        return [random.randint(1, 6) for _ in range(4)]
 
 
 class MastermindGame:
@@ -10,25 +16,24 @@ class MastermindGame:
 
     def iteration(self, user_code):
         if user_code == self.secret_code:
-            print("Congratulations! You have guessed the code.")
             return self.game_id, self.attempts, self.secret_code, user_code, 4, 4
 
         correct_position = sum(
             u == s for u, s in zip(user_code, self.secret_code))
         correct_digit = sum(min(user_code.count(
             digit), self.secret_code.count(digit)) for digit in set(user_code))
-        print(f"{correct_position} correct digits in the correct position, {correct_digit - correct_position} correct digits in the incorrect position.")
 
         self.attempts += 1
         return self.game_id, self.attempts, self.secret_code, user_code, correct_position, correct_digit
 
     def play(self):
-        while self.attempts < 10:
-            user_code = [int(digit)
-                         for digit in input("Enter a 4-digit code: ")]
+        automata = Automata()
+        while self.attempts < 100:
+            user_code = automata.generate_code()
             result = self.iteration(user_code)
             print(result)
             if result[4] == 4:
+                print("Congratulations! You have guessed the code.")
                 exit()
 
         print("Sorry, you did not guess the code. The code was: ",
