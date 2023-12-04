@@ -8,9 +8,7 @@ class MastermindGame:
         self.secret_code = [random.randint(1, 6) for _ in range(4)]
         self.attempts = 0
 
-    def iteration(self):
-        user_code = [int(digit) for digit in input("Enter a 4-digit code: ")]
-
+    def iteration(self, user_code):
         if user_code == self.secret_code:
             print("Congratulations! You have guessed the code.")
             return self.game_id, self.attempts, self.secret_code, user_code, 4, 4
@@ -26,7 +24,12 @@ class MastermindGame:
 
     def play(self):
         while self.attempts < 10:
-            print(self.iteration())
+            user_code = [int(digit)
+                         for digit in input("Enter a 4-digit code: ")]
+            result = self.iteration(user_code)
+            print(result)
+            if result[4] == 4:
+                exit()
 
         print("Sorry, you did not guess the code. The code was: ",
               ''.join(map(str, self.secret_code)))
