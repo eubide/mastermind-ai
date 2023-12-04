@@ -8,7 +8,7 @@ def generate_code():
     return [random.randint(1, 6) for _ in range(4)]
 
 
-class Automata:
+class Agent:
     def generate_code(self):
         return generate_code()
 
@@ -35,22 +35,22 @@ class MastermindGame:
         directory = "games"
         if not os.path.exists(directory):
             os.makedirs(directory)
-        filepath = os.path.join(directory, self.game_id)
+        filepath = os.path.join(directory, self.game_id+".txt")
 
-        automata = Automata()
+        my_agent = Agent()
         with open(filepath, "a") as file:
             while self.attempts < 10:
-                user_code = automata.generate_code()
+                user_code = my_agent.generate_code()
                 result = self.iteration(user_code)
-                print(*result, sep=", ")
+                # print(*result, sep=", ")
                 file.write(", ".join(map(str, result[3:6])) + "\n")
                 if result[4] == 4:
-                    print("Congratulations! You have guessed the code")
+                    # print("Congratulations! You have guessed the code")
                     file.write('OK' + str(result[2]))
                     exit()
 
-            print("Sorry, you did not guess the code. The code was: ",
-                  ''.join(map(str, self.secret_code)))
+            # print("Sorry, you did not guess the code. The code was: ",
+            #       ''.join(map(str, self.secret_code)))
             file.write('KO' + str(result[2]))
 
 

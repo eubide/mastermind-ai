@@ -1,6 +1,6 @@
 from automata import Automata
 import pytest
-from mastermindgame import MastermindGame, Automata
+from mastermindgame import MastermindGame, Agent
 import uuid
 
 
@@ -37,20 +37,20 @@ def test_play():
 
 
 def test_generate_code_returns_4_digits():
-    automata = Automata()
+    automata = Agent()
     code = automata.generate_code()
     assert len(code) == 4
 
 
 def test_generate_code_returns_numbers_from_1_to_6():
-    automata = Automata()
+    automata = Agent()
     code = automata.generate_code()
     for digit in code:
         assert 1 <= digit <= 6
 
 
 def test_generate_code_returns_different_codes():
-    automata = Automata()
+    automata = Agent()
     code1 = automata.generate_code()
     code2 = automata.generate_code()
     assert code1 != code2
