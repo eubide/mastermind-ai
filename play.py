@@ -1,7 +1,7 @@
-from mastermindgame import MastermindGame
+from mastermindgame import Mastermind
 from tqdm import tqdm
 
-for _ in tqdm(range(1000000)):
+for _ in tqdm(range(1000)):
     # Your code here
-    game = MastermindGame()
-    game.play()
+    game = Mastermind()
+    game.game()

@@ -13,13 +13,17 @@ class Agent:
         return generate_code()
 
 
-class MastermindGame:
+class Mastermind:
     def __init__(self):
+
+        self.MAX_ATTEMPTS = 10
         self.game_id = str(uuid.uuid4())
         self.secret_code = generate_code()
         self.attempts = 0
+        self.movements = []
+        self.guessed = False
 
-    def iteration(self, user_code):
+    def evalue_user_code(self, user_code):
         if user_code == self.secret_code:
             return self.game_id, self.attempts, self.secret_code, user_code, 4, 4
 
@@ -31,32 +35,30 @@ class MastermindGame:
         self.attempts += 1
         return self.game_id, self.attempts, self.secret_code, user_code, correct_position, correct_digit
 
-    def play(self):
-        directory = "games"
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        filepath = os.path.join(directory, self.game_id+".txt")
+    def print_game(self):
+        if self.guessed == 4 and self.attempts > 3:
+            print(f"You win in {self.attempts}!")
+            directory = "games"
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            filepath = os.path.join(directory, self.game_id+".txt")
+            with open(filepath, "w") as f:
+                for movement in self.movements:
+                    f.write(str(movement)+"\n")
 
+    def game(self):
         my_agent = Agent()
-        with open(filepath, "a") as file:
-            while self.attempts < 10:
-                user_code = my_agent.generate_code()
-                result = self.iteration(user_code)
-                # print(*result, sep=", ")
-                file.write(", ".join(map(str, result[3:6])) + "\n")
-                if result[4] == 4:
-                    # print("Congratulations! You have guessed the code")
-                    file.write('OK' + str(result[2]))
-                    exit()
 
-            # print("Sorry, you did not guess the code. The code was: ",
-            #       ''.join(map(str, self.secret_code)))
-            file.write('KO' + str(result[2]))
+        while True:
+            user_code = my_agent.generate_code()
+            result = self.evalue_user_code(user_code)
+            self.movements.append(result)
+            self.guessed = result[4]
 
-        # if it's KO then delete the file
-        if result[4] != 4:
-            os.remove(filepath)
+            if self.guessed == 4 or self.attempts == self.MAX_ATTEMPTS:
+                self.print_game()
+                return
 
 
-game = MastermindGame()
-game.play()
+game = Mastermind()
+game.game()
