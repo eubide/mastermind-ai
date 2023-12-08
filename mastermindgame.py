@@ -53,6 +53,10 @@ class MastermindGame:
             #       ''.join(map(str, self.secret_code)))
             file.write('KO' + str(result[2]))
 
+        # if it's KO then delete the file
+        if result[4] != 4:
+            os.remove(filepath)
+
 
 game = MastermindGame()
 game.play()
