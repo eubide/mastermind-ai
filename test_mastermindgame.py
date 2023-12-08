@@ -1,39 +1,39 @@
 from automata import Automata
 import pytest
-from mastermindgame import MastermindGame, Agent
+from mastermindgame import Mastermind, Agent
 import uuid
 
 
 def test_game_id_is_uuid():
-    game = MastermindGame()
+    game = Mastermind()
     # This will raise an exception if game_id is not a valid UUID
     uuid.UUID(game.game_id, version=4)
 
 
 def test_secret_code_has_4_digits():
-    game = MastermindGame()
+    game = Mastermind()
     assert len(game.secret_code) == 4
 
 
 def test_attempts_increment():
-    game = MastermindGame()
+    game = Mastermind()
     assert game.attempts == 0
-    game.iteration([1, 1, 1, 1])
+    game.evalue_user_code([1, 1, 1, 1])
     assert game.attempts == 1
 
 
 def test_iteration_returns_correct_results():
-    game = MastermindGame()
+    game = Mastermind()
     game.secret_code = [1, 2, 3, 4]
-    result = game.iteration([1, 2, 3, 4])
+    result = game.evalue_user_code([1, 2, 3, 4])
     assert result == (game.game_id, 1, [1, 2, 3, 4], [1, 2, 3, 4], 4)
 
 
 def test_play():
-    game = MastermindGame()
+    game = Mastermind()
     game.secret_code = [1, 2, 3, 4]
     with pytest.raises(SystemExit):
-        game.play()
+        game.game()
 
 
 def test_generate_code_returns_4_digits():
