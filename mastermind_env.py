@@ -2,20 +2,15 @@ import random
 import uuid
 import random
 import os
+from mastermind_agent import Agent
 
 
 def generate_code():
     return [random.randint(1, 6) for _ in range(4)]
 
 
-class Agent:
-    def generate_code(self):
-        return generate_code()
-
-
 class Mastermind:
     def __init__(self):
-
         self.MAX_ATTEMPTS = 10
         self.game_id = str(uuid.uuid4())
         self.secret_code = generate_code()
