@@ -12,7 +12,7 @@ This project is an implementation of an AI player for the game Mastermind. The A
 - <https://github.com/maurock/snake-ga>
 - <https://medium.com/@eduardogarrido90/why-deep-reinforcement-learning-is-going-to-be-the-next-big-deal-in-ai-2e796bdf47d2>
 
-## Example
+## Some Examples
 
 - <https://towardsdatascience.com/reinforcement-learning-with-python-part-1-creating-the-environment-dad6e0237d2d>
 - <https://towardsdatascience.com/deep-reinforcement-learning-with-python-part-2-creating-training-the-rl-agent-using-deep-q-d8216e59cf31>
