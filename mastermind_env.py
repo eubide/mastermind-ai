@@ -4,11 +4,9 @@ import random
 import os
 from mastermind_agent import Agent
 
-# random.seed(0)
-
 
 def generate_random_code():
-    return [random.randint(1, 6) for _ in range(4)]
+    return random.sample(range(1, 7), 4)
 
 
 def flatten_list(nested_list):
@@ -23,9 +21,7 @@ def flatten_list(nested_list):
 
 class Mastermind:
     def __init__(self):
-
         self.DIRECTORY = "games"
-
         self.MAX_ATTEMPTS = 10
         self.game_id = str(uuid.uuid4())
         self.secret_code = generate_random_code()
@@ -35,8 +31,7 @@ class Mastermind:
                       for _ in range(self.MAX_ATTEMPTS)]
 
     def print_state(self, debug=False):
-        if self.win:
-
+        if self.win or debug:
             if not os.path.exists(self.DIRECTORY):
                 os.makedirs(self.DIRECTORY)
             filepath = os.path.join(self.DIRECTORY, self.game_id+".txt")
@@ -45,6 +40,7 @@ class Mastermind:
                     flat_row = flatten_list(row)
                     numbers_str = ', '.join(map(str, flat_row))
                     f.write(str(numbers_str)+"\n")
+                f.write(', '.join(map(str, self.secret_code)))
 
         if debug:
             if self.win:
@@ -61,17 +57,21 @@ class Mastermind:
             user_code, correct_position, correct_digit]
 
     def evalue_user_code(self, user_code):
-        if user_code == self.secret_code:
-            return self.game_id, self.attempts, self.secret_code, user_code, 4, 4
-
         correct_position = sum(
             u == s for u, s in zip(user_code, self.secret_code))
+
         correct_digit = sum(min(user_code.count(
             digit), self.secret_code.count(digit)) for digit in set(user_code))
 
+        correct_digit -= correct_position
+
         if correct_position == 4:
             self.win = True
-        return self.game_id, self.attempts, self.secret_code, user_code, correct_position, correct_digit
+            print(self.attempts, self.secret_code, user_code,
+                  correct_position, correct_digit, self.win)
+            print(f"You win! in {self.attempts} attempts-")
+
+        return self.game_id, self.attempts, self.secret_code, user_code, int(correct_position), correct_digit
 
     def game(self):
         my_agent = Agent()
@@ -84,7 +84,7 @@ class Mastermind:
             self.attempts += 1
 
             if self.win or self.attempts == self.MAX_ATTEMPTS:
-                self.print_state(debug=True)
+                self.print_state(debug=False)
                 return self.win
 
 
