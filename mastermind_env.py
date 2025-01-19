@@ -4,7 +4,8 @@ from typing import List, Optional
 import random
 import uuid
 import os
-from mastermind_agent import Agent
+from datetime import datetime
+from mastermind_agent import Agent, KnuthStrategy, RandomStrategy, SimpleStrategy
 
 
 @dataclass
@@ -45,13 +46,14 @@ class GamePersistence:
             os.makedirs(directory)
 
     def save_game(self, game_id: str, state: GameState) -> None:
-        filepath = os.path.join(self.directory, f"{game_id}.txt")
+        timestamp = datetime.now().strftime("%Y%m%d%H%M")
+        filepath = os.path.join(self.directory, f"{timestamp}_{game_id}.txt")
         try:
             with open(filepath, "w") as f:
                 for move in state.moves:
                     flat_move = self._flatten_list(move)
-                    f.write(f"{', '.join(map(str, flat_move))}\n")
-                f.write(", ".join(map(str, state.secret_code)))
+                    f.write(f"{' | '.join(map(str, flat_move))}\n")
+                f.write(" | ".join(map(str, state.secret_code)))
         except IOError as e:
             print(f"Error saving game state: {e}")
 
@@ -159,13 +161,29 @@ class Mastermind(GameInterface):
                 flat_move = self.persistence._flatten_list(move)
                 print(flat_move)
 
-    def game(self) -> bool:
+    def game(self, strategy_name: str = "knuth") -> bool:
         """Run the game loop.
+
+        Args:
+            strategy_name: The name of the strategy to use. Options are:
+                - "knuth": Knuth's five-guess algorithm (default)
+                - "random": Random guessing strategy
+                - "simple": Simple position-by-position strategy
 
         Returns:
             bool: True if the player won, False otherwise
         """
-        my_agent = Agent()
+        # Create the agent with the selected strategy
+        strategy_map = {
+            "knuth": None,  # None will use the default KnuthStrategy
+            "random": RandomStrategy(),
+            "simple": SimpleStrategy()
+        }
+
+        if strategy_name not in strategy_map:
+            raise ValueError(f"Invalid strategy name. Options are: {list(strategy_map.keys())}")
+
+        my_agent = Agent(strategy=strategy_map[strategy_name])
 
         while not self.is_game_over():
             try:
@@ -180,5 +198,20 @@ class Mastermind(GameInterface):
 
 
 if __name__ == "__main__":
-    game = Mastermind()
-    game.game()
+    # Example of running the game with different strategies
+    strategies = ["knuth", "random", "simple"]
+    results = {}
+
+    for strategy in strategies:
+        game = Mastermind()
+        won = game.game(strategy)
+        results[strategy] = {
+            "won": won,
+            "attempts": game.state.attempts
+        }
+
+    # Print results
+    print("\nResults for different strategies:")
+    for strategy, result in results.items():
+        status = "Won" if result["won"] else "Lost"
+        print(f"{strategy.capitalize()}: {status} in {result['attempts']} attempts")
