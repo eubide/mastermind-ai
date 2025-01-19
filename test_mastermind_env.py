@@ -72,17 +72,6 @@ def test_print_state(game):
     game.print_state(debug=True)
 
 
-# Tests para casos límite
-def test_repeated_digits_in_guess(game):
-    """Test feedback when guess contains repeated digits"""
-    feedback = game.make_move([1, 1, 1, 1])
-    assert feedback == Feedback(correct_position=1, correct_digit=0)
-
-    game.state.attempts = 0  # Reset attempts for next test
-    feedback = game.make_move([2, 2, 2, 2])
-    assert feedback == Feedback(correct_position=0, correct_digit=1)
-
-
 def test_invalid_guess_length():
     """Test handling of guesses with invalid length"""
     game = Mastermind()

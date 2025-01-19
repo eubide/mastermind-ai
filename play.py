@@ -18,7 +18,7 @@ def run_games(num_games: int = 1000) -> List[Dict]:
 
     for _ in tqdm(range(num_games), desc="Playing games"):
         game = Mastermind()
-        won = game.game()
+        won = game.game("random")
 
         stats.append(
             {"won": won, "attempts": game.state.attempts, "game_id": game.game_id}
