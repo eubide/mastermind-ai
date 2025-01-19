@@ -1,92 +1,184 @@
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import List, Optional
 import random
 import uuid
-import random
 import os
 from mastermind_agent import Agent
 
 
-def generate_random_code():
-    return random.sample(range(1, 7), 4)
+@dataclass
+class GameState:
+    """Class to represent the game state"""
+
+    attempts: int
+    max_attempts: int
+    secret_code: List[int]
+    moves: List[List]
+    win: bool = False
 
 
-def flatten_list(nested_list):
-    flat_list = []
-    for element in nested_list:
-        if isinstance(element, list):
-            flat_list.extend(element)
-        else:
-            flat_list.append(element)
-    return flat_list
+@dataclass
+class Feedback:
+    """Class to represent move feedback"""
+
+    correct_position: int
+    correct_digit: int
 
 
-class Mastermind:
-    def __init__(self):
-        self.DIRECTORY = "games"
-        self.MAX_ATTEMPTS = 10
-        self.game_id = str(uuid.uuid4())
-        self.secret_code = generate_random_code()
-        self.attempts = 0
-        self.win = False
-        self.state = [[[0, 0, 0, 0], 0, 0]
-                      for _ in range(self.MAX_ATTEMPTS)]
+class GameInterface(ABC):
+    @abstractmethod
+    def make_move(self, code: List[int]) -> Feedback:
+        pass
 
-    def print_state(self, debug=False):
-        if self.win or debug:
-            if not os.path.exists(self.DIRECTORY):
-                os.makedirs(self.DIRECTORY)
-            filepath = os.path.join(self.DIRECTORY, self.game_id+".txt")
+    @abstractmethod
+    def is_game_over(self) -> bool:
+        pass
+
+
+class GamePersistence:
+    """Class to handle game state persistence"""
+
+    def __init__(self, directory: str = "games"):
+        self.directory = directory
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+    def save_game(self, game_id: str, state: GameState) -> None:
+        filepath = os.path.join(self.directory, f"{game_id}.txt")
+        try:
             with open(filepath, "w") as f:
-                for row in self.state:
-                    flat_row = flatten_list(row)
-                    numbers_str = ', '.join(map(str, flat_row))
-                    f.write(str(numbers_str)+"\n")
-                f.write(', '.join(map(str, self.secret_code)))
+                for move in state.moves:
+                    flat_move = self._flatten_list(move)
+                    f.write(f"{', '.join(map(str, flat_move))}\n")
+                f.write(", ".join(map(str, state.secret_code)))
+        except IOError as e:
+            print(f"Error saving game state: {e}")
+
+    @staticmethod
+    def _flatten_list(nested_list: List) -> List:
+        flat_list = []
+        for element in nested_list:
+            if isinstance(element, list):
+                flat_list.extend(element)
+            else:
+                flat_list.append(element)
+        return flat_list
+
+
+class Mastermind(GameInterface):
+    """A class representing the Mastermind game environment."""
+
+    CODE_LENGTH = 4
+    MIN_DIGIT = 1
+    MAX_DIGIT = 6
+
+    def __init__(self, max_attempts: int = 10):
+        self.game_id = str(uuid.uuid4())
+        self.state = GameState(
+            attempts=0,
+            max_attempts=max_attempts,
+            secret_code=self._generate_random_code(),
+            moves=[[0, 0, 0, 0] for _ in range(max_attempts)],
+        )
+        self.persistence = GamePersistence()
+
+    @staticmethod
+    def _generate_random_code() -> List[int]:
+        """Generate a random code allowing repeated digits"""
+        return [
+            random.randint(Mastermind.MIN_DIGIT, Mastermind.MAX_DIGIT)
+            for _ in range(Mastermind.CODE_LENGTH)
+        ]
+
+    def _validate_move(self, code: List[int]) -> None:
+        """Validate a move before processing it"""
+        if self.is_game_over():
+            raise ValueError("Game is over")
+
+        if len(code) != self.CODE_LENGTH:
+            raise ValueError("Guess must be 4 digits long")
+
+        if not all(isinstance(x, int) for x in code):
+            raise ValueError("All digits must be integers")
+
+        if not all(self.MIN_DIGIT <= x <= self.MAX_DIGIT for x in code):
+            raise ValueError("Digits must be between 1 and 6")
+
+    def make_move(self, code: List[int]) -> Feedback:
+        """Make a move and get feedback"""
+        self._validate_move(code)
+
+        # Calculate correct positions
+        correct_pos = sum(c == g for c, g in zip(self.state.secret_code, code))
+
+        # Calculate correct digits (including those in correct position)
+        code_counts = [code.count(i) for i in range(self.MIN_DIGIT, self.MAX_DIGIT + 1)]
+        secret_counts = [
+            self.state.secret_code.count(i)
+            for i in range(self.MIN_DIGIT, self.MAX_DIGIT + 1)
+        ]
+        total_correct = sum(min(c, g) for c, g in zip(code_counts, secret_counts))
+
+        # Correct digits but wrong position = total correct - correct positions
+        feedback = Feedback(correct_pos, total_correct - correct_pos)
+        self._update_state(code, feedback)
+        return feedback
+
+    def _update_state(self, code: List[int], feedback: Feedback) -> None:
+        self.state.moves[self.state.attempts] = [
+            code,
+            feedback.correct_position,
+            feedback.correct_digit,
+        ]
+        self.state.attempts += 1
+
+        if feedback.correct_position == 4:
+            self.state.win = True
+            self.persistence.save_game(self.game_id, self.state)
+
+    def is_game_over(self) -> bool:
+        return self.state.win or self.state.attempts >= self.state.max_attempts
+
+    def print_state(self, debug: bool = False) -> None:
+        """Print the current game state.
+
+        Args:
+            debug: If True, prints detailed game information
+        """
+        if self.state.win or debug:
+            self.persistence.save_game(self.game_id, self.state)
 
         if debug:
-            if self.win:
-                print(f"You win! in {self.attempts} attempts")
+            if self.state.win:
+                print(f"You win! in {self.state.attempts} attempts")
             else:
                 print("You lose!")
-                print(f"Secret code: {self.secret_code}")
-            for row in self.state:
-                flat_row = flatten_list(row)
-                print(flat_row)
+                print(f"Secret code: {self.state.secret_code}")
+            for move in self.state.moves:
+                flat_move = self.persistence._flatten_list(move)
+                print(flat_move)
 
-    def add_movement_to_state(self, user_code, correct_position, correct_digit):
-        self.state[self.attempts] = [
-            user_code, correct_position, correct_digit]
+    def game(self) -> bool:
+        """Run the game loop.
 
-    def evalue_user_code(self, user_code):
-        correct_position = sum(
-            u == s for u, s in zip(user_code, self.secret_code))
-
-        correct_digit = sum(min(user_code.count(
-            digit), self.secret_code.count(digit)) for digit in set(user_code))
-
-        correct_digit -= correct_position
-
-        if correct_position == 4:
-            self.win = True
-            print(self.attempts, self.secret_code, user_code,
-                  correct_position, correct_digit, self.win)
-            print(f"You win! in {self.attempts} attempts-")
-
-        return self.game_id, self.attempts, self.secret_code, user_code, int(correct_position), correct_digit
-
-    def game(self):
+        Returns:
+            bool: True if the player won, False otherwise
+        """
         my_agent = Agent()
 
-        while True:
-            user_code = my_agent.generate_next_code(self.state)
-            result = self.evalue_user_code(user_code)
-            self.add_movement_to_state(user_code, result[4], result[5])
+        while not self.is_game_over():
+            try:
+                user_code = my_agent.generate_next_code(self.state.moves)
+                result = self.make_move(user_code)
+            except Exception as e:
+                print(f"Error during game play: {e}")
+                break
 
-            self.attempts += 1
-
-            if self.win or self.attempts == self.MAX_ATTEMPTS:
-                self.print_state(debug=False)
-                return self.win
+        self.print_state(debug=False)
+        return self.state.win
 
 
-game = Mastermind()
-game.game()
+if __name__ == "__main__":
+    game = Mastermind()
+    game.game()
