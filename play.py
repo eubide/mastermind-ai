@@ -54,7 +54,7 @@ def analyze_results(stats: List[Dict]) -> None:
         plt.xlabel("Number of Attempts")
         plt.ylabel("Frequency")
         plt.grid(True, alpha=0.3)
-        plt.savefig("attempt_distribution.png")
+        plt.savefig("games/attempt_distribution.png")
         plt.close()
 
 
